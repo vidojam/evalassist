@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Toastmaster Evaluations</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h1>Toastmaster Speech Evaluation</h1>
+
+        <div class="section">
+            <h2>Introduction</h2>
+            <button onclick="showAlertOpening()">Opening</button>
+            <button onclick="showAlertIntro()">Introduction</button>
+        </div>
+
+        <div class="section">
+            <h2>Body</h2>
+            <button onclick="showAlertBody()">Body</button>
+            <div class="subsection">
+                <h3>Delivery Techniques</h3>
+                <button onclick="showAlertStage()">Stage</button>
+                <button onclick="showAlertEye()">Eye Contact</button>
+                <button onclick="showAlertGestures()">Gestures</button>
+                <button onclick="showAlertStories()">Stories</button>
+                <button onclick="showAlertProps()">Props</button>
+            </div>
+            <div class="subsection">
+                <h3>Vocal Variety</h3>
+                <button onclick="showAlertVocalVariety()">Overview</button>
+                <button onclick="showAlertVolume()">Volume</button>
+                <button onclick="showAlertPitch()">Pitch</button>
+                <button onclick="showAlertEmphasis()">Emphasis</button>
+                <button onclick="showAlertPause()">Pause</button>
+                <button onclick="showAlertPace()">Pace</button>
+                <button onclick="showAlertEmotion()">Emotion</button>
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>Close</h2>
+            <button onclick="showAlertClose()">Close</button>
+            <button onclick="showAlertSuggestion()">Suggestions</button>
+            <button onclick="showAlertSummary()">Summary</button>
+        </div>
+    </div>
+
+    <script src="app.js"></script>
+</body>
+</html>
