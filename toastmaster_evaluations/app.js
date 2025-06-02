@@ -20,6 +20,7 @@ function showAlertBody() {
     alert("Your speech was clear, concise and entertaining");
 }
 
+
 function showAlertStage() {
    
     alert("YOU MADE GOOD USE OF THE STAGE AREA...");
