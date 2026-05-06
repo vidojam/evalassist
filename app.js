@@ -1,3 +1,83 @@
+document.addEventListener("DOMContentLoaded", () => {
+    // --- Storyboard drag-and-drop ---
+    let draggedButton = null;
+    let dragOriginParent = null;
+    let dragOriginNextSibling = null;
+
+    function attachDragEvents(btn) {
+        if (btn.dataset.dragReady === "true") return;
+        btn.dataset.dragReady = "true";
+
+        btn.addEventListener("dragstart", (e) => {
+            draggedButton = btn;
+            dragOriginParent = btn.parentElement;
+            dragOriginNextSibling = btn.nextElementSibling;
+            e.dataTransfer.effectAllowed = "move";
+            setTimeout(() => btn.classList.add("dragging"), 0);
+        });
+        btn.addEventListener("dragend", () => {
+            btn.classList.remove("dragging");
+            draggedButton = null;
+            dragOriginParent = null;
+            dragOriginNextSibling = null;
+        });
+    }
+
+    function restoreToOrigin(button) {
+        if (!dragOriginParent) return;
+
+        if (dragOriginNextSibling && dragOriginNextSibling.parentNode === dragOriginParent) {
+            dragOriginParent.insertBefore(button, dragOriginNextSibling);
+        } else {
+            dragOriginParent.appendChild(button);
+        }
+    }
+
+    function createButtonClone(sourceButton) {
+        const clone = sourceButton.cloneNode(true);
+        clone.classList.remove("dragging");
+        clone.dataset.dragReady = "false";
+        attachDragEvents(clone);
+        return clone;
+    }
+
+    function attachDropZone(zone) {
+        zone.addEventListener("dragover", (e) => {
+            e.preventDefault();
+            e.dataTransfer.dropEffect = "move";
+            zone.classList.add("drag-over");
+        });
+        zone.addEventListener("dragleave", (e) => {
+            if (!zone.contains(e.relatedTarget)) zone.classList.remove("drag-over");
+        });
+        zone.addEventListener("drop", (e) => {
+            e.preventDefault();
+            zone.classList.remove("drag-over");
+            if (draggedButton && !zone.contains(draggedButton)) {
+                if (zone.classList.contains("duplicate-zone")) {
+                    const duplicateButton = createButtonClone(draggedButton);
+                    zone.appendChild(duplicateButton);
+                    restoreToOrigin(draggedButton);
+                } else {
+                    zone.appendChild(draggedButton);
+                }
+            }
+        });
+    }
+
+    const clearDuplicateZoneButton = document.getElementById("clearDuplicateZone");
+    const duplicateZone = document.querySelector("#storyboard .duplicate-zone");
+
+    if (clearDuplicateZoneButton && duplicateZone) {
+        clearDuplicateZoneButton.addEventListener("click", () => {
+            duplicateZone.querySelectorAll("button").forEach((button) => button.remove());
+        });
+    }
+
+    document.querySelectorAll("#storyboard button[draggable='true']").forEach(attachDragEvents);
+    document.querySelectorAll("#storyboard .drop-zone").forEach(attachDropZone);
+});
+
 function showAlertOpening() {
     alert("Fellow Toastmasters, guest and especially...[speaker name]");
     alert("That was an outstanding speech");

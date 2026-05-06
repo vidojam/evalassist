@@ -4,47 +4,85 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Toastmaster Evaluations</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;700&family=Fraunces:opsz,wght@9..144,500;9..144,700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
+    <div class="ambient-bg"></div>
     <div class="container">
-        <h1>Toastmaster Speech Evaluation</h1>
+        <header class="page-header">
+            <p class="eyebrow">Toastmaster Toolkit</p>
+            <h1>Speech Evaluation Studio</h1>
+            <p class="subhead">Storyboard Cards is now the primary EvalAssist interface. Drag feedback buttons between boxes as needed.</p>
+        </header>
 
-        <div class="section">
-            <h2>Introduction</h2>
-            <button onclick="showAlertOpening()">Opening</button>
-            <button onclick="showAlertIntro()">Introduction</button>
-        </div>
-
-        <div class="section">
-            <h2>Body</h2>
-            <button onclick="showAlertBody()">Body</button>
-            <div class="subsection">
-                <h3>Delivery Techniques</h3>
-                <button onclick="showAlertStage()">Stage</button>
-                <button onclick="showAlertEye()">Eye Contact</button>
-                <button onclick="showAlertGestures()">Gestures</button>
-                <button onclick="showAlertStories()">Stories</button>
-                <button onclick="showAlertProps()">Props</button>
+        <section id="storyboard" aria-label="Storyboard Cards Interface">
+            <div class="card-track">
+                <article class="story-card warm">
+                    <p>Opening</p>
+                    <h3>First Impression</h3>
+                    <div class="button-row drop-zone">
+                        <button draggable="true" onclick="showAlertOpening()">Play Prompt</button>
+                    </div>
+                </article>
+                <article class="story-card intro-card">
+                    <p>Intro</p>
+                    <h3>The Introduction</h3>
+                    <div class="button-row drop-zone">
+                        <button draggable="true" onclick="showAlertIntro()">Introduction</button>
+                    </div>
+                </article>
+                <article class="story-card body-structure">
+                    <p>Body</p>
+                    <h3>In the Body</h3>
+                    <div class="button-row drop-zone">
+                        <button draggable="true" onclick="showAlertBody()">Body</button>
+                        <button draggable="true" onclick="showAlertGestures()">Gestures</button>
+                        <button draggable="true" onclick="showAlertStories()">Stories</button>
+                    </div>
+                </article>
+                <article class="story-card cool">
+                    <p>Delivery</p>
+                    <h3>Eye Contact & Gestures</h3>
+                    <div class="button-row drop-zone">
+                        <button draggable="true" onclick="showAlertEye()">Eye Contact</button>
+                        <button draggable="true" onclick="showAlertStage()">Stage</button>
+                        <button draggable="true" onclick="showAlertProps()">Props</button>
+                    </div>
+                </article>
+                <article class="story-card pop">
+                    <p>Vocals</p>
+                    <h3>Rhythm & Emotion</h3>
+                    <div class="button-row drop-zone">
+                        <button draggable="true" onclick="showAlertVolume()">Volume</button>
+                        <button draggable="true" onclick="showAlertPace()">Pace</button>
+                        <button draggable="true" onclick="showAlertEmotion()">Emotion</button>
+                    </div>
+                </article>
+                <article class="story-card deep">
+                    <p>Your Close</p>
+                    <h3>Final Impact</h3>
+                    <div class="button-row drop-zone">
+                        <button draggable="true" onclick="showAlertClose()">Close</button>
+                    </div>
+                </article>
+                <article class="story-card duplicate-card">
+                    <p>In Closing</p>
+                    <h3>Duplicate Drop Zone</h3>
+                    <div class="button-row drop-zone duplicate-zone"></div>
+                    <button type="button" id="clearDuplicateZone" class="clear-duplicates-btn">Clear All</button>
+                </article>
+                <article class="story-card closing-suggestions">
+                    <p>My Closing Summary</p>
+                    <h3>Final Summary</h3>
+                    <div class="button-row drop-zone">
+                        <button draggable="true" onclick="showAlertSummary()">Summary</button>
+                    </div>
+                </article>
             </div>
-            <div class="subsection">
-                <h3>Vocal Variety</h3>
-                <button onclick="showAlertVocalVariety()">Overview</button>
-                <button onclick="showAlertVolume()">Volume</button>
-                <button onclick="showAlertPitch()">Pitch</button>
-                <button onclick="showAlertEmphasis()">Emphasis</button>
-                <button onclick="showAlertPause()">Pause</button>
-                <button onclick="showAlertPace()">Pace</button>
-                <button onclick="showAlertEmotion()">Emotion</button>
-            </div>
-        </div>
-
-        <div class="section">
-            <h2>Close</h2>
-            <button onclick="showAlertClose()">Close</button>
-            <button onclick="showAlertSuggestion()">Suggestions</button>
-            <button onclick="showAlertSummary()">Summary</button>
-        </div>
+        </section>
     </div>
 
     <script src="app.js"></script>
