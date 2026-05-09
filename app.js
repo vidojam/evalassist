@@ -76,123 +76,249 @@ document.addEventListener("DOMContentLoaded", () => {
 
     document.querySelectorAll("#storyboard button[draggable='true']").forEach(attachDragEvents);
     document.querySelectorAll("#storyboard .drop-zone").forEach(attachDropZone);
+
+    updateBackendHealth();
+    initializePromptAdmin();
 });
 
+const API_ORIGIN = (window.location.port === "5500" || window.location.protocol === "file:")
+    ? "http://localhost:3001"
+    : "";
+
+function apiUrl(path) {
+    return `${API_ORIGIN}${path}`;
+}
+
+async function updateBackendHealth() {
+    const healthEl = document.getElementById("backendHealth");
+
+    if (!healthEl) {
+        return;
+    }
+
+    healthEl.textContent = "Backend: checking...";
+    healthEl.classList.remove("ok", "error");
+    healthEl.classList.add("checking");
+
+    try {
+        const response = await fetch(apiUrl("/api/health"));
+
+        if (!response.ok) {
+            throw new Error(`Request failed with status ${response.status}`);
+        }
+
+        const payload = await response.json();
+
+        if (payload && payload.ok) {
+            healthEl.textContent = "Backend: connected";
+            healthEl.classList.remove("checking", "error");
+            healthEl.classList.add("ok");
+            return;
+        }
+
+        throw new Error("Health check response was not ok");
+    } catch (error) {
+        healthEl.textContent = "Backend: disconnected";
+        healthEl.classList.remove("checking", "ok");
+        healthEl.classList.add("error");
+    }
+}
+
+function initializePromptAdmin() {
+    const categorySelect = document.getElementById("adminCategory");
+    const statementsTextarea = document.getElementById("categoryStatements");
+    const refreshButton = document.getElementById("refreshCategories");
+    const loadButton = document.getElementById("loadCategory");
+    const saveButton = document.getElementById("saveCategory");
+    const statusEl = document.getElementById("adminStatus");
+
+    if (!categorySelect || !statementsTextarea || !refreshButton || !loadButton || !saveButton || !statusEl) {
+        return;
+    }
+
+    let promptsCache = {};
+
+    function setStatus(message, isError = false) {
+        statusEl.textContent = message;
+        statusEl.classList.toggle("error", isError);
+    }
+
+    function getSelectedCategory() {
+        return String(categorySelect.value || "").toLowerCase();
+    }
+
+    function updateTextAreaFromSelectedCategory() {
+        const category = getSelectedCategory();
+        const statements = Array.isArray(promptsCache[category]) ? promptsCache[category] : [];
+        statementsTextarea.value = statements.join("\n");
+    }
+
+    function populateCategoryOptions() {
+        const categories = Object.keys(promptsCache).sort((a, b) => a.localeCompare(b));
+
+        categorySelect.innerHTML = "";
+
+        categories.forEach((category) => {
+            const option = document.createElement("option");
+            option.value = category;
+            option.textContent = category;
+            categorySelect.appendChild(option);
+        });
+    }
+
+    async function fetchAllPrompts() {
+        setStatus("Loading categories...");
+
+        try {
+            const response = await fetch(apiUrl("/api/prompts"));
+
+            if (!response.ok) {
+                throw new Error(`Failed with status ${response.status}`);
+            }
+
+            const payload = await response.json();
+            promptsCache = payload && typeof payload === "object" ? payload : {};
+
+            populateCategoryOptions();
+            updateTextAreaFromSelectedCategory();
+            setStatus("Categories loaded.");
+        } catch (error) {
+            setStatus("Could not load categories. Ensure the backend is running.", true);
+        }
+    }
+
+    async function saveSelectedCategory() {
+        const category = getSelectedCategory();
+
+        if (!category) {
+            setStatus("Select a category before saving.", true);
+            return;
+        }
+
+        const statements = statementsTextarea.value
+            .split("\n")
+            .map((line) => line.trim())
+            .filter((line) => line.length > 0);
+
+        setStatus("Saving to database...");
+
+        try {
+            const response = await fetch(apiUrl(`/api/prompts/${encodeURIComponent(category)}`), {
+                method: "PUT",
+                headers: {
+                    "Content-Type": "application/json"
+                },
+                body: JSON.stringify({ statements })
+            });
+
+            if (!response.ok) {
+                throw new Error(`Failed with status ${response.status}`);
+            }
+
+            promptsCache[category] = statements;
+            setStatus(`Saved ${statements.length} statement(s) for '${category}'.`);
+        } catch (error) {
+            setStatus("Save failed. Check backend and database connection.", true);
+        }
+    }
+
+    refreshButton.addEventListener("click", fetchAllPrompts);
+    loadButton.addEventListener("click", updateTextAreaFromSelectedCategory);
+    saveButton.addEventListener("click", saveSelectedCategory);
+
+    fetchAllPrompts();
+}
+
+async function showPromptSequence(category) {
+    try {
+        const response = await fetch(apiUrl(`/api/prompts/${encodeURIComponent(category)}`));
+
+        if (!response.ok) {
+            throw new Error(`Request failed with status ${response.status}`);
+        }
+
+        const payload = await response.json();
+        const statements = Array.isArray(payload.statements) ? payload.statements : [];
+
+        if (!statements.length) {
+            alert(`No prompts found for '${category}'.`);
+            return;
+        }
+
+        statements.forEach((statement) => alert(statement));
+    } catch (error) {
+        alert("Unable to load prompt statements from the backend. Make sure the API server is running.");
+    }
+}
+
 function showAlertOpening() {
-    alert("Fellow Toastmasters, guest and especially...[speaker name]");
-    alert("That was an outstanding speech");
-    alert("The structure of your speech, is the basis, for all good presentations");
-    alert("A strong introduction, a clear body and a powerful closing");
+    showPromptSequence("opening");
 }
 
 function showAlertIntro() {
-    alert("In your introduction...");
-    alert("You made us think, grabbed our attention and told us, what your topic was about")
-    alert("You ask a question, that made us think");
-    alert("You made a statement, that grabbed our attention");
-    alert("You set the stage for your speech");
-}  
+    showPromptSequence("intro");
+}
 
 function showAlertBody() {
-     alert("In the body...");
-     alert("You had the perfect combination, to deliver your message");
-     alert("It was clear, concise and entertaining");
-}  
+    showPromptSequence("body");
+}
 
-        function showAlertStage() {
-            alert("My compliments on the use of your stage area.");
-            alert("I suggest adding a little more variety");
-            alert("Downstage communicates more intimacy and connection with the audience");
-            alert("Or you can use different parts for different parts of your speech");
-        }  
+function showAlertStage() {
+    showPromptSequence("stage");
+}
 
-        function showAlertEye() {
-            alert("With your eye contact...");
-            alert("You bonded with the audience...");
-            alert("You communicated passion and strengthen your message");
-        }  
+function showAlertEye() {
+    showPromptSequence("eye");
+}
 
-        function showAlertGestures() {
-            alert("Your gestures were natural and appropriate");
-            alert("When well timed, gestures can add impact to your message");
-            alert("They emphasized and reinforced your message");
-           
-        }  
+function showAlertGestures() {
+    showPromptSequence("gestures");
+}
 
+function showAlertStories() {
+    showPromptSequence("stories");
+}
 
-        function showAlertStories() {
-            alert("Who does not love a good story?");
-            alert("You engaged and hooked your audience with your stories");
-            alert("You also created an emotional and memorable connection, with the audience");
-        }  
+function showAlertProps() {
+    showPromptSequence("props");
+}
 
+function showAlertVocalVariety() {
+    showPromptSequence("vocalvariety");
+}
 
-        function showAlertProps() {
-            alert("Props...");
-            alert("Make your speech MORE INTERESTING to listen to");
-            alert("Allows the audience to VISUALIZE your message.");
-        }  
+function showAlertVolume() {
+    showPromptSequence("volume");
+}
 
+function showAlertPitch() {
+    showPromptSequence("pitch");
+}
 
-        function showAlertVocalVariety() {
-            alert("Your Vocal Variety, breaths life into your words and actions");
-            alert("It also makes you more interesting to listen to");
-        }  
+function showAlertEmphasis() {
+    showPromptSequence("emphasis");
+}
 
-                function showAlertVolume() {
-                    alert("Volume, to ensure your audience can hear you and emphasize important points");
-                    alert("find the right volume balance, to keep your audience engaged");
-                }  
-                function showAlertPitch() {
-                    alert("Pitch, higher pitch can communicate excitement, to emphasize your key points");
-                    alert("Lower pitch can communicate seriousness, to emphasize your key points"); 
-                }  
+function showAlertPause() {
+    showPromptSequence("pause");
+}
 
-                function showAlertEmphasis() {
-                    alert("Emphasis, stress cert words, to highlight your key points");
-                    alert("Repeating key words or phrases, to emphasize your key points");
-                }  
-                function showAlertPause() {
-                    alert("Pause, to punctuate your message, and to create impact and let your audience reflect");
-                    alert("Before and after words or key points, to let your audience reflect");
-                }  
-                function showAlertPace() {
-                    alert("Pace, to keep your audience engaged");
-                    alert("On Pace, keep it slow to generate suspense and fast to generate excitement");
-                    alert("conversation is at a rate of 120-150 words per minute");
-                }  
-                function showAlertEmotion() {
-                    alert("Emotion, i.e. a smile with a happy memory, to connect with your audience");
-                }  
+function showAlertPace() {
+    showPromptSequence("pace");
+}
 
-
+function showAlertEmotion() {
+    showPromptSequence("emotion");
+}
 
 function showAlertClose() {
-            alert("In your close...");
-            alert("You reinforced your message and left a lasting impression");
-            alert("Came full circle and ended with a powerful closing");
-            alert("Gave us a call to action, to reflect on your message");
-}  
+    showPromptSequence("close");
+}
 
 function showAlertSuggestion() {
-    alert("My suggestion, to take this speech to the next level...");
-    
-    alert("Is to use more Vocal Variety");
-    alert("Vocal Variety, breaths life into your words and actions");
-    alert("Vocal Variety, creates an emotional and memorable connection with your audience");
-
-    alert("Volume, to ensure your audience can hear you and emphasize important points");
-    alert("Pitch, higher pitch can communicate excitement, to emphasize your key points");
-    alert("Emphasis, stress certain words, to highlight your key points");
-    alert("Pace, to keep your audience engaged");
-    alert("Pause, to punctuate your message, and to create impact and let your audience reflect");
-    alert("Emotion, smile with a happy memory, to connect with your audience"); 
-
-    alert("It will help you to create more impact and keep your audience engaged");
-}  
+    showPromptSequence("suggestion");
+}
 
 function showAlertSummary() {
-     alert("In summary...");
-     alert("Keep up the x, y and z and add vocal variety to your speech");
-     alert("I am definitely looking forward, to your next speech");
-}    
+    showPromptSequence("summary");
+}
