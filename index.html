@@ -16,7 +16,10 @@
             <p class="eyebrow">Toastmaster Toolkit</p>
             <h1>Speech Evaluation Studio</h1>
             <p class="subhead">Storyboard Cards is now the primary EvalAssist interface. Drag feedback buttons between boxes as needed.</p>
-            <p id="backendHealth" class="backend-health checking" aria-live="polite">Backend: checking...</p>
+            <div class="header-actions">
+                <p id="backendHealth" class="backend-health checking" aria-live="polite">Backend: checking...</p>
+                <button type="button" id="generateOutlineBtn" class="generate-outline-btn">Generate Evaluation Outline</button>
+            </div>
         </header>
 
         <section id="storyboard" aria-label="Storyboard Cards Interface">
@@ -85,21 +88,32 @@
             </div>
         </section>
 
-        <section id="prompt-admin" class="admin-panel" aria-label="Prompt Admin">
-            <h2>Prompt Admin</h2>
-            <p class="admin-subhead">Edit statements for each category. Use one line per statement.</p>
-            <div class="admin-controls">
-                <label for="adminCategory">Category</label>
-                <select id="adminCategory"></select>
-                <button type="button" id="refreshCategories">Refresh</button>
-                <button type="button" id="loadCategory">Load</button>
-            </div>
-            <textarea id="categoryStatements" rows="10" placeholder="One statement per line"></textarea>
-            <div class="admin-actions">
-                <button type="button" id="saveCategory" class="save-btn">Save to Database</button>
-            </div>
-            <p id="adminStatus" class="admin-status" aria-live="polite"></p>
-        </section>
+        <div class="panels-row">
+            <section id="prompt-admin" class="admin-panel" aria-label="Prompt Admin">
+                <h2>Prompt Admin</h2>
+                <p class="admin-subhead">Edit statements for each category. Use one line per statement.</p>
+                <div class="admin-controls">
+                    <label for="adminCategory">Category</label>
+                    <select id="adminCategory"></select>
+                    <button type="button" id="refreshCategories">Refresh</button>
+                    <button type="button" id="loadCategory">Load</button>
+                </div>
+                <textarea id="categoryStatements" rows="10" placeholder="One statement per line"></textarea>
+                <div class="admin-actions">
+                    <button type="button" id="saveCategory" class="save-btn">Save to Database</button>
+                </div>
+                <p id="adminStatus" class="admin-status" aria-live="polite"></p>
+            </section>
+
+            <section id="eval-outliner" class="eval-outliner-panel" aria-label="Evaluation Outliner" hidden>
+                <h2>Evaluation Outliner</h2>
+                <p class="admin-subhead">Prompts collected as buttons are pressed in the studio.</p>
+                <div id="outlinerEntries" class="outliner-entries"></div>
+                <div class="admin-actions">
+                    <button type="button" id="clearOutlinerBtn" class="clear-outline-btn">Clear</button>
+                </div>
+            </section>
+        </div>
     </div>
 
     <script src="app.js"></script>

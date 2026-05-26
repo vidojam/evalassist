@@ -79,6 +79,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
     updateBackendHealth();
     initializePromptAdmin();
+    initializeEvalOutliner();
 });
 
 const API_ORIGIN = (window.location.port === "5500" || window.location.protocol === "file:")
@@ -229,6 +230,47 @@ function initializePromptAdmin() {
     fetchAllPrompts();
 }
 
+let evalOutlineEnabled = false;
+
+function appendToOutliner(category, statements) {
+    const entries = document.getElementById("outlinerEntries");
+    if (!entries) return;
+    const block = document.createElement("div");
+    block.className = "outliner-block";
+    const heading = document.createElement("h4");
+    heading.textContent = category.charAt(0).toUpperCase() + category.slice(1);
+    block.appendChild(heading);
+    statements.forEach((stmt) => {
+        const p = document.createElement("p");
+        p.textContent = stmt;
+        block.appendChild(p);
+    });
+    entries.appendChild(block);
+}
+
+function initializeEvalOutliner() {
+    const generateBtn = document.getElementById("generateOutlineBtn");
+    const outlinerPanel = document.getElementById("eval-outliner");
+    const clearBtn = document.getElementById("clearOutlinerBtn");
+
+    if (!generateBtn || !outlinerPanel || !clearBtn) return;
+
+    generateBtn.addEventListener("click", () => {
+        evalOutlineEnabled = true;
+        outlinerPanel.hidden = false;
+        generateBtn.textContent = "Outline Active";
+        generateBtn.disabled = true;
+    });
+
+    clearBtn.addEventListener("click", () => {
+        document.getElementById("outlinerEntries").innerHTML = "";
+        evalOutlineEnabled = false;
+        outlinerPanel.hidden = true;
+        generateBtn.textContent = "Generate Evaluation Outline";
+        generateBtn.disabled = false;
+    });
+}
+
 async function showPromptSequence(category) {
     try {
         const response = await fetch(apiUrl(`/api/prompts/${encodeURIComponent(category)}`));
@@ -245,7 +287,11 @@ async function showPromptSequence(category) {
             return;
         }
 
-        statements.forEach((statement) => alert(statement));
+        if (evalOutlineEnabled) {
+            appendToOutliner(category, statements);
+        } else {
+            statements.forEach((statement) => alert(statement));
+        }
     } catch (error) {
         alert("Unable to load prompt statements from the backend. Make sure the API server is running.");
     }

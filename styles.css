@@ -217,8 +217,39 @@ button[draggable="true"]:active {
     border: 1.5px solid #99b3f0;
 }
 
-.admin-panel {
+.header-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 10px;
+    margin-top: 10px;
+}
+
+.generate-outline-btn {
+    background: var(--brand);
+}
+
+.generate-outline-btn:hover {
+    background: var(--brand-dark);
+}
+
+.generate-outline-btn:disabled {
+    background: #a0756a;
+    cursor: not-allowed;
+    opacity: 0.7;
+    transform: none;
+}
+
+.panels-row {
+    display: flex;
+    gap: 16px;
     margin-top: 20px;
+    align-items: flex-start;
+}
+
+.admin-panel {
+    flex: 0 0 50%;
+    min-width: 0;
     padding: 18px;
     background: linear-gradient(180deg, #f3fbf8, #fff);
     border: 1px solid #b8d8cc;
@@ -285,6 +316,70 @@ button[draggable="true"]:active {
 
 .admin-status.error {
     color: #8a1f1f;
+}
+
+.eval-outliner-panel {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 18px;
+    background: linear-gradient(180deg, #f5f0fb, #fff);
+    border: 1px solid #c3b0e0;
+    border-radius: 18px;
+    box-shadow: 0 16px 30px rgba(49, 62, 74, 0.08);
+}
+
+.eval-outliner-panel h2 {
+    margin: 0;
+    font-family: "Fraunces", serif;
+}
+
+.outliner-entries {
+    margin-top: 12px;
+    max-height: 340px;
+    overflow-y: auto;
+    border: 1px solid var(--stroke);
+    border-radius: 10px;
+    padding: 12px;
+    background: #fff;
+}
+
+.outliner-entries:empty::before {
+    content: "Press buttons in the studio to populate this outline.";
+    color: #7a6a96;
+    font-size: 0.9rem;
+}
+
+.outliner-block {
+    margin-bottom: 16px;
+}
+
+.outliner-block:last-child {
+    margin-bottom: 0;
+}
+
+.outliner-block h4 {
+    margin: 0 0 6px;
+    font-family: "Fraunces", serif;
+    color: #4a2e82;
+    font-size: 1rem;
+    text-transform: capitalize;
+    border-bottom: 1px solid #ddd0f5;
+    padding-bottom: 4px;
+}
+
+.outliner-block p {
+    margin: 4px 0;
+    font-size: 0.92rem;
+    color: var(--ink);
+    line-height: 1.45;
+}
+
+.clear-outline-btn {
+    background: #7a4fbf;
+}
+
+.clear-outline-btn:hover {
+    background: #5e3a96;
 }
 
 @keyframes fadeUp {
