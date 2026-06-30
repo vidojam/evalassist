@@ -368,3 +368,22 @@ function showAlertSuggestion() {
 function showAlertSummary() {
     showPromptSequence("summary");
 }
+
+window.showAlertOpening = showAlertOpening;
+window.showAlertIntro = showAlertIntro;
+window.showAlertBody = showAlertBody;
+window.showAlertStage = showAlertStage;
+window.showAlertEye = showAlertEye;
+window.showAlertGestures = showAlertGestures;
+window.showAlertStories = showAlertStories;
+window.showAlertProps = showAlertProps;
+window.showAlertVocalVariety = showAlertVocalVariety;
+window.showAlertVolume = showAlertVolume;
+window.showAlertPitch = showAlertPitch;
+window.showAlertEmphasis = showAlertEmphasis;
+window.showAlertPause = showAlertPause;
+window.showAlertPace = showAlertPace;
+window.showAlertEmotion = showAlertEmotion;
+window.showAlertClose = showAlertClose;
+window.showAlertSuggestion = showAlertSuggestion;
+window.showAlertSummary = showAlertSummary;

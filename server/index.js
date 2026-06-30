@@ -1,5 +1,6 @@
 require("dotenv").config();
 
+const path = require("path");
 const express = require("express");
 const cors = require("cors");
 const { createPool } = require("./db");
@@ -122,6 +123,18 @@ app.put("/api/prompts/:category", async (req, res) => {
   }
 });
 
+const distDir = path.resolve(__dirname, "..", "dist");
+
+app.use(express.static(distDir));
+
+app.get("*", (req, res, next) => {
+  if (req.path.startsWith("/api/")) {
+    return next();
+  }
+
+  return res.sendFile(path.join(distDir, "index.html"));
+});
+
 app.listen(port, () => {
-  console.log(`EvalAssist API running on http://localhost:${port}`);
+  console.log(`EvalAssist running on http://localhost:${port}`);
 });

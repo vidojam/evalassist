@@ -57,6 +57,53 @@ npm run dev
 
 Frontend runs on `http://localhost:5173` and backend runs on `http://localhost:3001`.
 
+## Single-Service Deployment (Render)
+
+This repo is configured for a single Render Web Service:
+
+- Render builds the frontend with Vite.
+- Express serves both API routes and the built frontend from `dist`.
+
+### Option A: Blueprint (recommended)
+
+1. Push this repo to GitHub.
+2. In Render, choose **New +** -> **Blueprint**.
+3. Select this repository.
+4. Render will use `render.yaml`.
+
+### Option B: Manual Web Service
+
+Use these settings:
+
+- **Runtime:** Node
+- **Build Command:** `npm install && npm run build`
+- **Start Command:** `npm start`
+
+### Required Environment Variables
+
+Set these in Render:
+
+- `DB_HOST`
+- `DB_PORT` (usually `3306`)
+- `DB_USER`
+- `DB_PASSWORD`
+- `DB_NAME`
+
+`PORT` is injected by Render automatically.
+
+### Database Initialization
+
+Run schema creation and seed once against your production MySQL:
+
+- Use `sql/init.sql` to create the table.
+- Run `npm run seed` with production DB env vars configured.
+
+### Health Check
+
+After deploy, verify:
+
+- `GET /api/health` returns `{ "ok": true }`.
+
 ## API Endpoints
 
 - `GET /api/health` - checks database connectivity.
@@ -69,3 +116,4 @@ Frontend runs on `http://localhost:5173` and backend runs on `http://localhost:3
 - The frontend calls `/api/prompts/:category` for each button click.
 - The Prompt Admin panel in the main page can refresh, load, and save statements per category.
 - Vite is configured to proxy `/api` requests to the backend during development.
+- In production, Express serves `dist` and the API from the same origin.
