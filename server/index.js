@@ -3,11 +3,16 @@ require("dotenv").config();
 const path = require("path");
 const express = require("express");
 const cors = require("cors");
+const { ensureDatabaseReady } = require("./dbBootstrap");
 const { createPool } = require("./db");
 
 const app = express();
 const port = Number(process.env.PORT || 3001);
-const pool = createPool();
+let pool;
+
+function parseBooleanEnv(name) {
+  return String(process.env[name] || "").toLowerCase() === "true";
+}
 
 app.use(cors());
 app.use(express.json());
@@ -135,6 +140,25 @@ app.get("*", (req, res, next) => {
   return res.sendFile(path.join(distDir, "index.html"));
 });
 
-app.listen(port, () => {
-  console.log(`EvalAssist running on http://localhost:${port}`);
+async function startServer() {
+  const autoInit = parseBooleanEnv("DB_AUTO_INIT_ON_START");
+  const autoSeedEmpty = parseBooleanEnv("DB_AUTO_SEED_IF_EMPTY");
+
+  if (autoInit) {
+    const result = await ensureDatabaseReady({ seedIfEmpty: autoSeedEmpty });
+    console.log(
+      `DB bootstrap complete (seeded=${result.seeded}, reason=${result.reason})`
+    );
+  }
+
+  pool = createPool();
+
+  app.listen(port, () => {
+    console.log(`EvalAssist running on http://localhost:${port}`);
+  });
+}
+
+startServer().catch((error) => {
+  console.error("Startup failed:", error.message);
+  process.exit(1);
 });

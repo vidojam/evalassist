@@ -19,3 +19,7 @@ services:
         sync: false
       - key: DB_NAME
         sync: false
+      - key: DB_AUTO_INIT_ON_START
+        value: "false"
+      - key: DB_AUTO_SEED_IF_EMPTY
+        value: "false"

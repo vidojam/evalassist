@@ -91,12 +91,27 @@ Set these in Render:
 
 `PORT` is injected by Render automatically.
 
+### Optional Startup Bootstrap Flags
+
+Set these only if you want the app to initialize schema at startup:
+
+- `DB_AUTO_INIT_ON_START=true` creates database and table if missing.
+- `DB_AUTO_SEED_IF_EMPTY=true` seeds prompt data only when the table is empty.
+
+Recommended for first deployment only:
+
+1. Deploy once with both flags set to `true`.
+2. Confirm data is present.
+3. Set `DB_AUTO_SEED_IF_EMPTY=false` (and optionally `DB_AUTO_INIT_ON_START=false`) for normal operation.
+
 ### Database Initialization
 
 Run schema creation and seed once against your production MySQL:
 
 - Use `sql/init.sql` to create the table.
 - Run `npm run seed` with production DB env vars configured.
+
+You can use the startup flags above as an alternative to manual initialization.
 
 ### Health Check
 
