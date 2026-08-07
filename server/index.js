@@ -5,6 +5,7 @@ const express = require("express");
 const cors = require("cors");
 const { ensureDatabaseReady } = require("./dbBootstrap");
 const { createPool } = require("./db");
+const promptsSeedData = require("./promptsSeedData");
 
 const app = express();
 const port = Number(process.env.PORT || 3001);
@@ -40,6 +41,13 @@ app.get("/api/prompts", async (_req, res) => {
       return acc;
     }, {});
 
+    // Keep seeded categories visible in admin even if DB rows were deleted.
+    for (const [category, seedStatements] of Object.entries(promptsSeedData)) {
+      if (!Array.isArray(grouped[category]) || grouped[category].length === 0) {
+        grouped[category] = [...seedStatements];
+      }
+    }
+
     res.json(grouped);
   } catch (error) {
     res.status(500).json({ error: "Failed to fetch prompts" });
@@ -63,6 +71,16 @@ app.get("/api/prompts/:category", async (req, res) => {
     );
 
     if (!rows.length) {
+      const fallbackStatements = promptsSeedData[category];
+
+      if (Array.isArray(fallbackStatements) && fallbackStatements.length > 0) {
+        return res.json({
+          category,
+          statements: [...fallbackStatements],
+          source: "seed_fallback"
+        });
+      }
+
       return res.status(404).json({
         error: `No prompts found for category '${category}'`
       });
@@ -123,6 +141,44 @@ app.put("/api/prompts/:category", async (req, res) => {
   } catch (error) {
     await connection.rollback();
     res.status(500).json({ error: "Failed to update prompt category" });
+  } finally {
+    connection.release();
+  }
+});
+
+app.post("/api/prompts/restore", async (_req, res) => {
+  const connection = await pool.getConnection();
+
+  try {
+    await connection.beginTransaction();
+
+    await connection.query("DELETE FROM prompt_statements");
+
+    const rowsToInsert = [];
+
+    for (const [category, statements] of Object.entries(promptsSeedData)) {
+      statements.forEach((statement, index) => {
+        rowsToInsert.push([category, index + 1, statement]);
+      });
+    }
+
+    if (rowsToInsert.length > 0) {
+      await connection.query(
+        "INSERT INTO prompt_statements (category_key, sort_order, statement_text) VALUES ?",
+        [rowsToInsert]
+      );
+    }
+
+    await connection.commit();
+
+    res.json({
+      restored: true,
+      categoryCount: Object.keys(promptsSeedData).length,
+      statementCount: rowsToInsert.length
+    });
+  } catch (error) {
+    await connection.rollback();
+    res.status(500).json({ error: "Failed to restore prompt categories" });
   } finally {
     connection.release();
   }

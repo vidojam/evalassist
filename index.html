@@ -101,6 +101,8 @@
                 <textarea id="categoryStatements" rows="10" placeholder="One statement per line"></textarea>
                 <div class="admin-actions">
                     <button type="button" id="saveCategory" class="save-btn">Save to Database</button>
+                    <button type="button" id="addToOriginalCategory" class="copy-outline-btn">Add to Original (Temporary)</button>
+                    <button type="button" id="restoreCategories" class="clear-outline-btn">Restore Original Categories</button>
                 </div>
                 <p id="adminStatus" class="admin-status" aria-live="polite"></p>
             </section>
@@ -108,9 +110,20 @@
             <section id="eval-outliner" class="eval-outliner-panel" aria-label="Evaluation Outliner" hidden>
                 <h2>Evaluation Outliner</h2>
                 <p class="admin-subhead">Prompts collected as buttons are pressed in the studio.</p>
+                <div class="outliner-export-options">
+                    <label for="speakerNameInput">Speaker Name</label>
+                    <input type="text" id="speakerNameInput" placeholder="Optional name for print/email">
+                    <label for="includeSpeakerName" class="checkbox-label">
+                        <input type="checkbox" id="includeSpeakerName" checked>
+                        Include speaker name in print/email
+                    </label>
+                </div>
                 <div id="outlinerEntries" class="outliner-entries"></div>
                 <div class="admin-actions">
                     <button type="button" id="clearOutlinerBtn" class="clear-outline-btn">Clear</button>
+                    <button type="button" id="copyOutlinerBtn" class="copy-outline-btn">Copy</button>
+                    <button type="button" id="printOutlinerBtn" class="print-outline-btn">Print</button>
+                    <button type="button" id="emailOutlinerBtn" class="email-outline-btn">Email</button>
                 </div>
             </section>
         </div>

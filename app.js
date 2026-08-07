@@ -90,6 +90,33 @@ function apiUrl(path) {
     return `${API_ORIGIN}${path}`;
 }
 
+// Shared cache so prompt buttons and Prompt Admin stay in sync.
+let promptAdminCache = {};
+let promptAdminOriginalCache = {};
+let promptAdminDraftCache = {};
+const DEFAULT_EMAIL_RECIPIENT = "vidojam2@gmail.com";
+
+function clonePromptMap(source) {
+    return Object.fromEntries(
+        Object.entries(source || {}).map(([key, value]) => [
+            key,
+            Array.isArray(value) ? [...value] : []
+        ])
+    );
+}
+
+function getEffectiveCategoryStatements(category) {
+    if (Array.isArray(promptAdminDraftCache[category])) {
+        return promptAdminDraftCache[category];
+    }
+
+    if (Array.isArray(promptAdminCache[category])) {
+        return promptAdminCache[category];
+    }
+
+    return [];
+}
+
 async function updateBackendHealth() {
     const healthEl = document.getElementById("backendHealth");
 
@@ -131,13 +158,13 @@ function initializePromptAdmin() {
     const refreshButton = document.getElementById("refreshCategories");
     const loadButton = document.getElementById("loadCategory");
     const saveButton = document.getElementById("saveCategory");
+    const addToOriginalButton = document.getElementById("addToOriginalCategory");
+    const restoreButton = document.getElementById("restoreCategories");
     const statusEl = document.getElementById("adminStatus");
 
-    if (!categorySelect || !statementsTextarea || !refreshButton || !loadButton || !saveButton || !statusEl) {
+    if (!categorySelect || !statementsTextarea || !refreshButton || !loadButton || !saveButton || !addToOriginalButton || !restoreButton || !statusEl) {
         return;
     }
-
-    let promptsCache = {};
 
     function setStatus(message, isError = false) {
         statusEl.textContent = message;
@@ -150,19 +177,24 @@ function initializePromptAdmin() {
 
     function updateTextAreaFromSelectedCategory() {
         const category = getSelectedCategory();
-        const statements = Array.isArray(promptsCache[category]) ? promptsCache[category] : [];
+        const statements = getEffectiveCategoryStatements(category);
         statementsTextarea.value = statements.join("\n");
     }
 
     function populateCategoryOptions() {
-        const categories = Object.keys(promptsCache).sort((a, b) => a.localeCompare(b));
+        const categories = Object.keys(promptAdminCache).sort((a, b) => a.localeCompare(b));
 
         categorySelect.innerHTML = "";
+
+        function getCategoryLabel(category) {
+            if (category === "intro") return "introduction";
+            return category;
+        }
 
         categories.forEach((category) => {
             const option = document.createElement("option");
             option.value = category;
-            option.textContent = category;
+            option.textContent = getCategoryLabel(category);
             categorySelect.appendChild(option);
         });
     }
@@ -178,7 +210,8 @@ function initializePromptAdmin() {
             }
 
             const payload = await response.json();
-            promptsCache = payload && typeof payload === "object" ? payload : {};
+            promptAdminCache = payload && typeof payload === "object" ? payload : {};
+            promptAdminOriginalCache = clonePromptMap(promptAdminCache);
 
             populateCategoryOptions();
             updateTextAreaFromSelectedCategory();
@@ -216,16 +249,87 @@ function initializePromptAdmin() {
                 throw new Error(`Failed with status ${response.status}`);
             }
 
-            promptsCache[category] = statements;
+            promptAdminCache[category] = statements;
+            promptAdminDraftCache[category] = [...statements];
             setStatus(`Saved ${statements.length} statement(s) for '${category}'.`);
         } catch (error) {
             setStatus("Save failed. Check backend and database connection.", true);
         }
     }
 
+    function syncSelectedCategoryDraftToCache() {
+        const category = getSelectedCategory();
+
+        if (!category) {
+            return;
+        }
+
+        const statements = statementsTextarea.value
+            .split("\n")
+            .map((line) => line.trim())
+            .filter((line) => line.length > 0);
+
+        promptAdminDraftCache[category] = statements;
+        promptAdminCache[category] = statements;
+    }
+
+    function addDraftToOriginalCategoryTemporarily() {
+        const category = getSelectedCategory();
+
+        if (!category) {
+            setStatus("Select a category before adding to original.", true);
+            return;
+        }
+
+        const originalStatements = Array.isArray(promptAdminOriginalCache[category])
+            ? promptAdminOriginalCache[category]
+            : [];
+
+        const addedStatements = statementsTextarea.value
+            .split("\n")
+            .map((line) => line.trim())
+            .filter((line) => line.length > 0);
+
+        const mergedStatements = [...originalStatements, ...addedStatements];
+
+        promptAdminCache[category] = mergedStatements;
+        promptAdminDraftCache[category] = [...mergedStatements];
+        statementsTextarea.value = mergedStatements.join("\n");
+
+        setStatus("Temporarily merged with original category. This resets on refresh/reload unless you Save.");
+    }
+
+    async function restoreAllCategories() {
+        const shouldRestore = window.confirm("Restore all categories to the original seeded statements? This will overwrite current category data.");
+
+        if (!shouldRestore) {
+            return;
+        }
+
+        setStatus("Restoring original categories...");
+
+        try {
+            const response = await fetch(apiUrl("/api/prompts/restore"), {
+                method: "POST"
+            });
+
+            if (!response.ok) {
+                throw new Error(`Failed with status ${response.status}`);
+            }
+
+            await fetchAllPrompts();
+            setStatus("All categories were restored to original. Unsaved local draft text is still available with Load.");
+        } catch (error) {
+            setStatus("Restore failed. Check backend and database connection.", true);
+        }
+    }
+
     refreshButton.addEventListener("click", fetchAllPrompts);
     loadButton.addEventListener("click", updateTextAreaFromSelectedCategory);
     saveButton.addEventListener("click", saveSelectedCategory);
+    addToOriginalButton.addEventListener("click", addDraftToOriginalCategoryTemporarily);
+    restoreButton.addEventListener("click", restoreAllCategories);
+    statementsTextarea.addEventListener("input", syncSelectedCategoryDraftToCache);
 
     fetchAllPrompts();
 }
@@ -248,12 +352,176 @@ function appendToOutliner(category, statements) {
     entries.appendChild(block);
 }
 
+function buildOutlinerLines() {
+    const entries = document.getElementById("outlinerEntries");
+
+    if (!entries) {
+        return [];
+    }
+
+    const blocks = Array.from(entries.querySelectorAll(".outliner-block"));
+    const lines = [];
+
+    blocks.forEach((block) => {
+        const heading = block.querySelector("h4")?.textContent?.trim();
+        const statements = Array.from(block.querySelectorAll("p"))
+            .map((p) => p.textContent?.trim() || "")
+            .filter((text) => text.length > 0);
+
+        if (heading) {
+            lines.push(heading);
+        }
+
+        statements.forEach((statement) => {
+            lines.push(`- ${statement}`);
+        });
+
+        lines.push("");
+    });
+
+    return lines;
+}
+
+function getOutlinerExportMeta() {
+    const includeSpeakerNameEl = document.getElementById("includeSpeakerName");
+    const speakerNameInputEl = document.getElementById("speakerNameInput");
+
+    const includeSpeakerName = Boolean(includeSpeakerNameEl?.checked);
+    const speakerName = String(speakerNameInputEl?.value || "").trim();
+
+    return {
+        includeSpeakerName,
+        speakerName
+    };
+}
+
+function buildOutlinerTitle() {
+    const { includeSpeakerName, speakerName } = getOutlinerExportMeta();
+
+    if (includeSpeakerName && speakerName) {
+        return `Evaluation Outline - ${speakerName}`;
+    }
+
+    return "Evaluation Outline";
+}
+
+function buildOutlinerBody() {
+    const lines = buildOutlinerLines();
+    const { includeSpeakerName, speakerName } = getOutlinerExportMeta();
+    const bodyLines = [];
+
+    if (includeSpeakerName && speakerName) {
+        bodyLines.push(`Speaker: ${speakerName}`);
+        bodyLines.push("");
+    }
+
+    bodyLines.push(...lines);
+    return bodyLines;
+}
+
+async function copyOutlinerToClipboard() {
+    const bodyLines = buildOutlinerBody();
+
+    if (!bodyLines.length) {
+        alert("No outline content to copy yet.");
+        return;
+    }
+
+    try {
+        await navigator.clipboard.writeText(bodyLines.join("\n"));
+        alert("Evaluation outliner copied to clipboard.");
+    } catch (error) {
+        alert("Unable to copy automatically. Your browser may block clipboard access.");
+    }
+}
+
+async function copyOutlinerTextSilently(text) {
+    try {
+        await navigator.clipboard.writeText(text);
+        return true;
+    } catch (_error) {
+        return false;
+    }
+}
+
+function printOutliner() {
+    const bodyLines = buildOutlinerBody();
+    const title = buildOutlinerTitle();
+
+    if (!bodyLines.length) {
+        alert("No outline content to print yet.");
+        return;
+    }
+
+    const safeText = bodyLines.join("\n").replace(/[&<>]/g, (char) => {
+        return ({ "&": "&amp;", "<": "&lt;", ">": "&gt;" })[char];
+    });
+
+    const printWindow = window.open("", "_blank", "noopener,noreferrer");
+
+    if (!printWindow) {
+        alert("Unable to open print window. Please allow pop-ups for this site.");
+        return;
+    }
+
+    const printableHtml = `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+    <title>${title}</title>
+  <style>
+    body { font-family: Arial, sans-serif; margin: 24px; color: #1e2a35; }
+    h1 { margin: 0 0 8px; }
+    .date { margin: 0 0 16px; color: #4b5a66; }
+    pre { white-space: pre-wrap; font-family: Arial, sans-serif; line-height: 1.5; margin: 0; }
+  </style>
+</head>
+<body>
+    <h1>${title}</h1>
+  <p class="date">Generated ${new Date().toLocaleString()}</p>
+  <pre>${safeText}</pre>
+</body>
+</html>`;
+
+    printWindow.document.open();
+    printWindow.document.write(printableHtml);
+    printWindow.document.close();
+    printWindow.focus();
+    printWindow.print();
+}
+
+function emailOutliner() {
+    const bodyLines = buildOutlinerBody();
+    const title = buildOutlinerTitle();
+
+    if (!bodyLines.length) {
+        alert("No outline content to email yet.");
+        return;
+    }
+
+    const subject = `${title} - ${new Date().toLocaleDateString()}`;
+    const body = bodyLines.join("\r\n");
+    const mailtoUrl = `mailto:${encodeURIComponent(DEFAULT_EMAIL_RECIPIENT)}?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+    const gmailUrl = `https://mail.google.com/mail/?view=cm&fs=1&tf=1&to=${encodeURIComponent(DEFAULT_EMAIL_RECIPIENT)}&su=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+
+    copyOutlinerTextSilently(body).finally(() => {
+        const gmailWindow = window.open(gmailUrl, "_blank", "noopener,noreferrer");
+
+        if (!gmailWindow) {
+            window.location.href = mailtoUrl;
+        }
+    });
+}
+
 function initializeEvalOutliner() {
     const generateBtn = document.getElementById("generateOutlineBtn");
     const outlinerPanel = document.getElementById("eval-outliner");
     const clearBtn = document.getElementById("clearOutlinerBtn");
+    const copyBtn = document.getElementById("copyOutlinerBtn");
+    const printBtn = document.getElementById("printOutlinerBtn");
+    const emailBtn = document.getElementById("emailOutlinerBtn");
 
-    if (!generateBtn || !outlinerPanel || !clearBtn) return;
+    if (!generateBtn || !outlinerPanel || !clearBtn || !copyBtn || !printBtn || !emailBtn) return;
 
     generateBtn.addEventListener("click", () => {
         evalOutlineEnabled = true;
@@ -269,10 +537,32 @@ function initializeEvalOutliner() {
         generateBtn.textContent = "Generate Evaluation Outline";
         generateBtn.disabled = false;
     });
+
+    copyBtn.addEventListener("click", copyOutlinerToClipboard);
+    printBtn.addEventListener("click", printOutliner);
+    emailBtn.addEventListener("click", emailOutliner);
 }
 
 async function showPromptSequence(category) {
     try {
+        const effectiveStatements = getEffectiveCategoryStatements(category);
+        const localStatements = effectiveStatements.length ? effectiveStatements : null;
+
+        if (localStatements) {
+            if (!localStatements.length) {
+                alert(`No prompts found for '${category}'.`);
+                return;
+            }
+
+            if (evalOutlineEnabled) {
+                appendToOutliner(category, localStatements);
+            } else {
+                localStatements.forEach((statement) => alert(statement));
+            }
+
+            return;
+        }
+
         const response = await fetch(apiUrl(`/api/prompts/${encodeURIComponent(category)}`));
 
         if (!response.ok) {

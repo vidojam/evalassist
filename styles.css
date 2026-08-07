@@ -343,6 +343,33 @@ button[draggable="true"]:active {
     background: #fff;
 }
 
+.outliner-export-options {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 8px;
+    margin-top: 12px;
+}
+
+.outliner-export-options label {
+    font-weight: 600;
+    color: #38545a;
+}
+
+.outliner-export-options input[type="text"] {
+    border: 1px solid var(--stroke);
+    border-radius: 10px;
+    padding: 10px;
+    font-size: 0.95rem;
+    font-family: "Space Grotesk", sans-serif;
+}
+
+.outliner-export-options .checkbox-label {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font-weight: 500;
+}
+
 .outliner-entries:empty::before {
     content: "Press buttons in the studio to populate this outline.";
     color: #7a6a96;
@@ -380,6 +407,30 @@ button[draggable="true"]:active {
 
 .clear-outline-btn:hover {
     background: #5e3a96;
+}
+
+.copy-outline-btn {
+    background: #4c5b68;
+}
+
+.copy-outline-btn:hover {
+    background: #3e4a55;
+}
+
+.print-outline-btn {
+    background: #2a6470;
+}
+
+.print-outline-btn:hover {
+    background: #1e4e58;
+}
+
+.email-outline-btn {
+    background: #b3502d;
+}
+
+.email-outline-btn:hover {
+    background: #8f3f23;
 }
 
 @keyframes fadeUp {
